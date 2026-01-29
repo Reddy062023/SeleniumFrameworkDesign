@@ -16,6 +16,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
+
+    <!-- IMPORTANT: default suite so Jenkins doesn't fail -->
+    <suiteXmlFile>testSuites/testng.xml</suiteXmlFile>
+
+    <!-- default cucumber runner empty -->
+    <cucumberRunner></cucumberRunner>
   </properties>
 
   <dependencies>
@@ -61,7 +67,7 @@
       <version>5.0.9</version>
     </dependency>
 
-    <!-- WebDriverManager (keep only ONE version) -->
+    <!-- WebDriverManager -->
     <dependency>
       <groupId>io.github.bonigarcia</groupId>
       <artifactId>webdrivermanager</artifactId>
@@ -84,7 +90,7 @@
     </dependency>
   </dependencies>
 
-  <!-- Profiles only override surefire config -->
+  <!-- Profiles -->
   <profiles>
 
     <profile>
@@ -131,12 +137,12 @@
         <version>3.2.5</version>
 
         <configuration>
-          <!-- Default regression suite -->
+          <!-- Default suite -->
           <suiteXmlFiles>
             <suiteXmlFile>${suiteXmlFile}</suiteXmlFile>
           </suiteXmlFiles>
 
-          <!-- Only used for CucumberTests profile -->
+          <!-- For cucumber profile only -->
           <includes>
             <include>${cucumberRunner}</include>
           </includes>
