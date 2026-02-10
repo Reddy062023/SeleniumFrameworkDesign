@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven'
+        maven 'Maven'     // Jenkins → Global Tool Configuration
         jdk 'JDK17'
     }
 
@@ -17,21 +17,34 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                bat 'mvn clean test -Dbrowser=chrome'
+                // Explicitly tell Maven to use testng.xml
+                bat '''
+                    mvn clean test ^
+                    -Dsurefire.suiteXmlFiles=testng.xml ^
+                    -Dbrowser=chrome
+                '''
+            }
+        }
+
+        stage('Publish Allure Report') {
+            steps {
+                allure([
+                    includeProperties: false,
+                    jdk: '',
+                    results: [[path: 'target/allure-results']]
+                ])
+            }
+        }
+
+        stage('Publish JUnit Results') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
             }
         }
     }
 
     post {
         always {
-            // Publish Allure Report
-            allure(
-                includeProperties: false,
-                jdk: '',
-                results: [[path: 'target/allure-results']]
-            )
-
-            // Optional: keep raw results
             archiveArtifacts artifacts: 'target/allure-results/**/*', allowEmptyArchive: true
         }
     }
