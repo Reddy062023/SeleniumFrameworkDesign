@@ -7,6 +7,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -15,20 +16,26 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh 'mvn clean test'
+                bat 'mvn clean test -Dbrowser=chrome'
+            }
+        }
+
+        stage('Publish TestNG Results') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/surefire-reports/*.xml', allowEmptyArchive: true
-        }
-        failure {
-            echo '❌ Tests failed'
+            archiveArtifacts artifacts: 'target/**', allowEmptyArchive: true
         }
         success {
             echo '✅ Tests passed'
+        }
+        failure {
+            echo '❌ Tests failed'
         }
     }
 }
