@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven'     // must match Jenkins tool name
-        jdk 'JDK17'       // must match Jenkins tool name
+        maven 'Maven'
+        jdk 'JDK17'
     }
 
     stages {
@@ -20,30 +20,19 @@ pipeline {
                 bat 'mvn clean test -Dbrowser=chrome'
             }
         }
-
-        stage('Publish JUnit Report') {
-            steps {
-                junit 'target/surefire-reports/*.xml'
-            }
-        }
-
-        stage('Publish HTML Report') {
-            steps {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'target/surefire-reports',
-                    reportFiles: 'index.html',
-                    reportName: 'TestNG HTML Report'
-                ])
-            }
-        }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/surefire-reports/**/*', allowEmptyArchive: true
+            // Publish Allure Report
+            allure(
+                includeProperties: false,
+                jdk: '',
+                results: [[path: 'target/allure-results']]
+            )
+
+            // Optional: keep raw results
+            archiveArtifacts artifacts: 'target/allure-results/**/*', allowEmptyArchive: true
         }
     }
 }
