@@ -1,12 +1,9 @@
 package rahulshettyacademy.tests;
 
-import org.testng.annotations.Test;
-
 import java.io.IOException;
-import java.util.List;
 
-import org.openqa.selenium.WebElement;
 import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import rahulshettyacademy.TestComponents.BaseTest;
 import rahulshettyacademy.TestComponents.Retry;
@@ -15,26 +12,41 @@ import rahulshettyacademy.pageobjects.ProductCatalogue;
 
 public class ErrorValidationsTest extends BaseTest {
 
-	@Test(groups = { "ErrorHandling" }, retryAnalyzer = Retry.class)
-	public void LoginErrorValidation() throws IOException {
+    @Test(groups = { "ErrorHandling" }, retryAnalyzer = Retry.class)
+    public void LoginErrorValidation() throws IOException {
 
-		// Intentionally wrong password to trigger error message
-		landingPage.loginApplication("japendrareddy@gmail.com", "WrongPassword@123");
+        landingPage = launchApplication();
 
-		Assert.assertEquals(landingPage.getErrorMessage(), "Incorrect email or password.");
-	}
+        // Intentionally wrong password to trigger error message
+        landingPage.loginApplication(
+            "japendrareddy@gmail.com",
+            "WrongPassword@123"
+        );
 
-	@Test
-	public void ProductErrorValidation() throws IOException, InterruptedException {
+        Assert.assertEquals(
+            landingPage.getErrorMessage(),
+            "Incorrect email or password."
+        );
+    }
 
-		String productName = "ZARA COAT 3";
-		ProductCatalogue productCatalogue = landingPage.loginApplication("japendrareddy@gmail.com", "Medway@2025");
+    @Test(groups = { "ErrorHandling" })
+    public void ProductErrorValidation() throws IOException {
 
-		List<WebElement> products = productCatalogue.getProductList();
-		productCatalogue.addProductToCart(productName);
+        landingPage = launchApplication();
 
-		CartPage cartPage = productCatalogue.goToCartPage();
-		Boolean match = cartPage.VerifyProductDisplay("ZARA COAT 33");
-		Assert.assertFalse(match);
-	}
+        String productName = "ZARA COAT 3";
+
+        ProductCatalogue productCatalogue =
+            landingPage.loginApplication(
+                "japendrareddy@gmail.com",
+                "Medway@2025"
+            );
+
+        productCatalogue.addProductToCart(productName);
+
+        CartPage cartPage = productCatalogue.goToCartPage();
+        Assert.assertFalse(
+            cartPage.VerifyProductDisplay("ZARA COAT 33")
+        );
+    }
 }

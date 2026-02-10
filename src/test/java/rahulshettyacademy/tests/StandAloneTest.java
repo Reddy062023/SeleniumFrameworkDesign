@@ -15,7 +15,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import rahulshettyacademy.pageobjects.LandingPage;
 
 public class StandAloneTest {
 
@@ -23,81 +22,93 @@ public class StandAloneTest {
 
         String productName = "ZARA COAT 3";
 
-        // ✅ Automatically set up the correct ChromeDriver for your installed Chrome
+        // ✅ Setup ChromeDriver
         WebDriverManager.chromedriver().setup();
-
-        // Chrome options to improve stability
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--disable-gpu");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage");
 
         WebDriver driver = new ChromeDriver(options);
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.manage().window().maximize();
-
-        driver.get("https://rahulshettyacademy.com/client");
-
-        LandingPage landingPage = new LandingPage(driver);
-
-        // Login
-        driver.findElement(By.id("userEmail")).sendKeys("japendras06@gmail.com");
-        driver.findElement(By.id("userPassword")).sendKeys("Medway@2025");
-        driver.findElement(By.id("login")).click();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".mb-3")));
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        Actions actions = new Actions(driver);
 
-        // Select the product
-        List<WebElement> products = driver.findElements(By.cssSelector(".mb-3"));
+        try {
+            // Navigate to site
+            driver.get("https://rahulshettyacademy.com/client");
 
-        WebElement prod = products.stream()
-                .filter(product -> product.findElement(By.cssSelector("b")).getText().equals(productName))
-                .findFirst().orElseThrow(() -> new RuntimeException("Product not found: " + productName));
+            // Login
+            driver.findElement(By.id("userEmail")).sendKeys("japendras06@gmail.com");
+            driver.findElement(By.id("userPassword")).sendKeys("Medway@2025");
+            driver.findElement(By.id("login")).click();
 
-        // Scroll to product and click Add to Cart using JS
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", prod);
-        WebElement addToCartBtn = prod.findElement(By.cssSelector(".card-body button:last-of-type"));
-        wait.until(ExpectedConditions.elementToBeClickable(addToCartBtn));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", addToCartBtn);
+            // Wait for products to load
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".mb-3")));
 
-        // Wait for toast notification & animation to disappear
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#toast-container")));
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".ng-animating")));
+            // Select the product dynamically
+            List<WebElement> products = driver.findElements(By.cssSelector(".mb-3"));
 
-        // Scroll to Cart and click safely
-        WebElement cartButton = driver.findElement(By.cssSelector("[routerlink*='cart']"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", cartButton);
-        wait.until(ExpectedConditions.elementToBeClickable(cartButton));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", cartButton);
+            WebElement prod = products.stream()
+                    .filter(p -> p.findElement(By.cssSelector("b")).getText().equalsIgnoreCase(productName))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + productName));
 
-        // Verify product in cart
-        List<WebElement> cartProducts = driver.findElements(By.cssSelector(".cartSection h3"));
-        Boolean match = cartProducts.stream().anyMatch(cartProduct -> cartProduct.getText().equalsIgnoreCase(productName));
-        Assert.assertTrue(match, "Product not found in cart: " + productName);
+            // Scroll to product and click Add to Cart
+            js.executeScript("arguments[0].scrollIntoView({block:'center'});", prod);
+            WebElement addToCartBtn = prod.findElement(By.cssSelector(".card-body button:last-of-type"));
+            wait.until(ExpectedConditions.elementToBeClickable(addToCartBtn));
+            js.executeScript("arguments[0].click();", addToCartBtn);
 
-        // Proceed to Checkout
-        WebElement checkoutBtn = driver.findElement(By.cssSelector(".totalRow button"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", checkoutBtn);
-        wait.until(ExpectedConditions.elementToBeClickable(checkoutBtn));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", checkoutBtn);
+            // Wait for toast to disappear
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#toast-container")));
+            wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".ng-animating")));
 
-        // Select Country
-        WebElement countryInput = driver.findElement(By.cssSelector("[placeholder='Select Country']"));
-        Actions a = new Actions(driver);
-        a.sendKeys(countryInput, "india").build().perform();
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".ta-results")));
-        driver.findElement(By.xpath("(//button[contains(@class,'ta-item')])[2]")).click();
+            // Go to cart
+            WebElement cartButton = driver.findElement(By.cssSelector("[routerlink*='cart']"));
+            js.executeScript("arguments[0].scrollIntoView({block:'center'});", cartButton);
+            wait.until(ExpectedConditions.elementToBeClickable(cartButton));
+            js.executeScript("arguments[0].click();", cartButton);
 
-        // Submit order
-        WebElement submitBtn = driver.findElement(By.cssSelector(".action__submit"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", submitBtn);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", submitBtn);
+            // Verify product in cart
+            List<WebElement> cartProducts = driver.findElements(By.cssSelector(".cartSection h3"));
+            boolean match = cartProducts.stream()
+                    .anyMatch(cartProduct -> cartProduct.getText().equalsIgnoreCase(productName));
+            Assert.assertTrue(match, "Product not found in cart: " + productName);
 
-        // Verify confirmation
-        String confirmMessage = driver.findElement(By.cssSelector(".hero-primary")).getText();
-        Assert.assertTrue(confirmMessage.equalsIgnoreCase("THANKYOU FOR THE ORDER."));
+            // Proceed to Checkout
+            WebElement checkoutBtn = driver.findElement(By.cssSelector(".totalRow button"));
+            js.executeScript("arguments[0].scrollIntoView({block:'center'});", checkoutBtn);
+            wait.until(ExpectedConditions.elementToBeClickable(checkoutBtn));
+            js.executeScript("arguments[0].click();", checkoutBtn);
 
-        driver.quit();
+            // Select country
+            WebElement countryInput = driver.findElement(By.cssSelector("[placeholder='Select Country']"));
+            actions.sendKeys(countryInput, "india").build().perform();
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".ta-results")));
+            driver.findElement(By.xpath("(//button[contains(@class,'ta-item')])[2]")).click();
+
+            // Submit order
+            WebElement submitBtn = driver.findElement(By.cssSelector(".action__submit"));
+            js.executeScript("arguments[0].scrollIntoView({block:'center'});", submitBtn);
+            wait.until(ExpectedConditions.elementToBeClickable(submitBtn));
+            js.executeScript("arguments[0].click();", submitBtn);
+
+            // ✅ Wait for confirmation message
+            WebElement confirmElement = wait.until(
+                    ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".hero-primary"))
+            );
+
+            String confirmMessage = confirmElement.getText().trim();
+            System.out.println("Order confirmation message: " + confirmMessage);
+
+            // Verify
+            Assert.assertTrue(confirmMessage.equalsIgnoreCase("THANKYOU FOR THE ORDER."));
+
+        } finally {
+            // Close browser
+            driver.quit();
+        }
     }
 }
