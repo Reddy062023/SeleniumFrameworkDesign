@@ -2,50 +2,33 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven'     // Jenkins → Global Tool Configuration
+        maven 'Maven'
         jdk 'JDK17'
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Reddy062023/SeleniumFrameworkDesign.git'
+                checkout scm
             }
         }
 
         stage('Build & Test') {
             steps {
-                // Explicitly tell Maven to use testng.xml
-                bat '''
-                    mvn clean test ^
-                    -Dsurefire.suiteXmlFiles=testng.xml ^
-                    -Dbrowser=chrome
-                '''
-            }
-        }
-
-        stage('Publish Allure Report') {
-            steps {
-                allure([
-                    includeProperties: false,
-                    jdk: '',
-                    results: [[path: 'target/allure-results']]
-                ])
-            }
-        }
-
-        stage('Publish JUnit Results') {
-            steps {
-                junit 'target/surefire-reports/*.xml'
+                sh 'mvn clean test'
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/allure-results/**/*', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/surefire-reports/*.xml', allowEmptyArchive: true
+        }
+        failure {
+            echo '❌ Tests failed'
+        }
+        success {
+            echo '✅ Tests passed'
         }
     }
 }
